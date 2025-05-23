@@ -3,7 +3,7 @@ import sqlite3
 
 app = Flask(__name__)
 
-# Get route
+# Get all route
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     conn = sqlite3.connect('tasks.db')
@@ -23,6 +23,28 @@ def get_tasks():
         tasks.append(task)
 
     return jsonify(tasks)
+
+# Get by ID route
+@app.route('/tasks/<int:task_id>', methods=['GET'])
+def get_task_by_id(task_id):
+    conn = sqlite3.connect('tasks.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM tasks WHERE id = ?', (task_id,))
+    task = cursor.fetchone()
+    conn.close()
+
+    if task is None:
+        return jsonify({'error': 'Task not found'}), 404
+    
+    result = {
+        'id': task[0],
+        'title': task[1],
+        'description': task[2],
+        'completed': bool(task[3])
+    }
+
+    return jsonify(result)
 
 # Post route
 @app.route('/tasks', methods=['POST'])
@@ -55,6 +77,7 @@ def create_task():
 
     return jsonify(new_task), 201
 
+# Update route
 @app.route('/tasks/<int:task_id>', methods=['PUT'])
 def update_task(task_id):
     data = request.get_json()
@@ -94,6 +117,7 @@ def update_task(task_id):
 
     return jsonify(updated_task)
 
+# Delete route
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     conn = sqlite3.connect('tasks.db')

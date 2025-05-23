@@ -32,6 +32,10 @@ def create_task():
     description = data.get('description', '')
     completed = data.get('completed', False)
 
+    # Title validation
+    if not title:
+        return jsonify({'error': 'Title is required'}), 400
+
     conn = sqlite3.connect('tasks.db')
     cursor = conn.cursor()
     cursor.execute(
@@ -51,6 +55,45 @@ def create_task():
 
     return jsonify(new_task), 201
 
-# 🔹 Start the app if run directly
+@app.route('/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    data = request.get_json()
+    title = data.get('title')
+    description = data.get('description', '')
+    completed = data.get('completed', False)
+
+    # Validate title field
+    if not title:
+        return jsonify({'error': 'Title is required'}), 400
+    
+    conn = sqlite3.connect('tasks.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM tasks WHERE id = ?', (task_id,))
+    task = cursor.fetchone()
+
+    if task is None:
+        conn.close()
+        return jsonify({'error': 'Task not found'}), 404
+    
+    cursor.execute('''
+    UPDATE tasks
+    SET title = ?, description = ?, completed = ?
+    WHERE id = ?
+    ''', (title, description, int(completed), task_id))
+
+    conn.commit()
+    conn.close()
+
+    updated_task = {
+        'id': task_id,
+        'title': title,
+        'description': description,
+        'completed': completed
+    }
+
+    return jsonify(updated_task)
+
+# Start the app if run directly
 if __name__ == '__main__':
     app.run(debug=True)

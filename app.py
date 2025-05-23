@@ -94,6 +94,24 @@ def update_task(task_id):
 
     return jsonify(updated_task)
 
+@app.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    conn = sqlite3.connect('tasks.db')
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT * FROM tasks where id = ?', (task_id,))
+    task = cursor.fetchone()
+
+    if task is None:
+        conn.close()
+        return jsonify({'error': 'Task not found'}), 404
+    
+    cursor.execute('DELETE FROM tasks where id = ?', (task_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': f'Task {task_id} deleted successfully'}), 200
+
 # Start the app if run directly
 if __name__ == '__main__':
     app.run(debug=True)
